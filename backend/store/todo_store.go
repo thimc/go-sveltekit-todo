@@ -4,6 +4,9 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"reflect"
+	"strings"
+	"time"
 
 	"github.com/thimc/go-backend/types"
 
@@ -16,6 +19,7 @@ type DatabaseStorer interface {
 	InsertTodo(context.Context, *types.Todo) (*types.Todo, error)
 	UpdateTodoByID(context.Context, types.UpdateTodoParams, int64) error
 	DeleteTodoByID(context.Context, int64) error
+	PatchTodoByID(context.Context, int64, types.UpdateTodoParams) error
 
 	Close() error
 }
@@ -137,6 +141,45 @@ func (s *PostgreStore) DeleteTodoByID(ctx context.Context, id int64) error {
 	}
 	_, err = s.db.ExecContext(ctx, `DELETE FROM todo
 						WHERE id = $1`, id)
+
+	return err
+}
+
+func (s *PostgreStore) PatchTodoByID(ctx context.Context, id int64, t types.UpdateTodoParams) error {
+	var (
+		sb  strings.Builder
+		ref = reflect.Indirect(reflect.ValueOf(t))
+	)
+	for i := 0; i < ref.NumField(); i++ {
+		field := ref.Type().Field(i)
+		tag := field.Tag.Get("sql")
+		if tag == "" {
+			continue
+		}
+
+		val := ref.Field(i)
+		if val.IsNil() {
+			continue
+		}
+		fieldValue := val.Elem().Interface()
+
+		switch val.Elem().Kind() {
+		case reflect.Bool:
+			sb.WriteString(fmt.Sprintf("%s = %v", tag, fieldValue))
+		case reflect.Struct:
+			date := fieldValue.(time.Time)
+			sb.WriteString(fmt.Sprintf("%s = '%s'", tag, date.Format("2006-01-02 15:04:05.99-07")))
+		case reflect.String:
+			sb.WriteString(fmt.Sprintf("%s = '%v'", tag, fieldValue))
+		case reflect.Uint, reflect.Uint8, reflect.Uint32, reflect.Uint64,
+			reflect.Int, reflect.Int8, reflect.Int32, reflect.Int64,
+			reflect.Float32, reflect.Float64:
+			sb.WriteString(fmt.Sprintf("%s = %v", tag, fieldValue))
+		}
+		sb.WriteString(", ")
+	}
+	query := fmt.Sprintf("UPDATE todo SET %s WHERE id = %d", sb.String()[:len(sb.String())-2], id)
+	_, err := s.db.ExecContext(ctx, query)
 
 	return err
 }

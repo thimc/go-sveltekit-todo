@@ -7,55 +7,52 @@ import (
 
 type Todo struct {
 	// ID
-	ID int64 `json:"id,omitempty"`
+	ID int64 `json:"id,omitempty" example:"0"`
 	// The title of the Todo
-	Title string `json:"title"`
+	Title string `json:"title" example:"My title"`
 	// The content of the Todo
-	Content string `json:"content"`
-	// PostgreSQL uses a RFC3339-format
-	Created time.Time `json:"created" example:"2023-07-06T15:58:47.22Z"`
-	// PostgreSQL uses a RFC3339-format
-	Updated time.Time `json:"updated" example:"2023-07-06T15:58:47.22Z"`
+	Content string `json:"content" example:"My content"`
+	// PostgreSQL uses a ISO 8601-format
+	Created time.Time `json:"created" example:"2006-01-02 15:04:05.000-07"`
+	// PostgreSQL uses a ISO 8601-format
+	Updated time.Time `json:"updated" example:"2006-01-02 15:04:05.000-07"`
 	// User ID
-	CreatedBy int `json:"createdBy"`
+	CreatedBy int `json:"createdBy" example:"0"`
 	// User ID
-	UpdatedBy int `json:"updatedBy"`
+	UpdatedBy int `json:"updatedBy" example:"0"`
 	// This boolean determines if the todo has been completed
-	Done bool `json:"done"`
+	Done bool `json:"done" example:"false"`
 } // @name Todo
-
 
 type InsertTodoParams struct {
 	// The title of the Todo
-	Title string `json:"title" validate:"required"`
+	Title string `json:"title" example:"My new title" validate:"required"`
 	// The content of the Todo
-	Content string `json:"content" validate:"required"`
-	// PostgreSQL uses a RFC3339-format
-	Created time.Time `json:"-" example:"2023-07-06T15:58:47.22Z" validate:"required"`
+	Content string `json:"content" example:"My new content" validate:"required"`
+	// PostgreSQL uses a ISO 8601-format
+	Created time.Time `json:"-" example:"2006-01-02 15:04:05.000-07" validate:"required"`
 	// User ID
-	CreatedBy int `json:"createdBy" validate:"required"`
+	CreatedBy int `json:"createdBy" example:"0" validate:"required"`
 	// This boolean determines if the todo has been completed
-	Done bool `json:"done" validate:"required"`
+	Done bool `json:"done" example:"false" validate:"required"`
 } // @name InsertTodoParams
-
 
 type UpdateTodoParams struct {
 	// The title of the Todo
-	Title string `json:"title,omitempty" validate:"required"`
+	Title *string `json:"title,omitempty" sql:"title" example:"My new title" validate:"required"`
 	// The content of the Todo
-	Content string `json:"content,omitempty" validate:"required"`
-	// PostgreSQL uses a RFC3339-format
-	Created time.Time `json:"created,omitempty" example:"2023-07-06T15:58:47.22Z" validate:"required"`
-	// PostgreSQL uses a RFC3339-format
-	Updated time.Time `json:"updated,omitempty" example:"2023-07-06T15:58:47.22Z" validate:"required"`
+	Content *string `json:"content,omitempty" sql:"content" example:"My new content" validate:"required"`
+	// PostgreSQL uses a ISO 8601-format
+	Created *time.Time `json:"created,omitempty" sql:"created" example:"2006-01-02 15:04:05.000-07" validate:"required"`
+	// PostgreSQL uses a ISO 8601-format
+	Updated *time.Time `json:"updated,omitempty" sql:"updated" example:"2006-01-02 15:04:05.000-07" validate:"required"`
 	// User ID
-	CreatedBy int `json:"createdBy,omitempty" validate:"required"`
+	CreatedBy *int `json:"createdBy,omitempty" sql:"created_by" example:"0" validate:"required"`
 	// User ID
-	UpdatedBy int `json:"updatedBy,omitempty" validate:"required"`
+	UpdatedBy *int `json:"updatedBy,omitempty" sql:"updated_by" example:"0" validate:"required"`
 	// This boolean determines if the todo has been completed
-	Done bool `json:"done,omitempty" validate:"required"`
+	Done *bool `json:"done,omitempty" sql:"done" example:"false" validate:"required"`
 } // @name UpdateTodoParams
-
 
 func NewTodoFromParams(params InsertTodoParams) *Todo {
 	return &Todo{

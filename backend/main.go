@@ -2,7 +2,6 @@ package main
 
 import (
 	"log"
-	"net/http"
 	"os"
 
 	"github.com/gofiber/fiber/v2"
@@ -14,7 +13,6 @@ import (
 	"github.com/thimc/go-backend/api"
 	_ "github.com/thimc/go-backend/docs"
 	"github.com/thimc/go-backend/store"
-	"github.com/thimc/go-backend/types"
 )
 
 func init() {
@@ -31,13 +29,10 @@ func init() {
 // @BasePath		/
 func main() {
 	// error handler
-	config := fiber.Config{ErrorHandler: func(c *fiber.Ctx, err error) error {
-		if resp, ok := err.(types.ApiResponse); ok {
-			return c.Status(resp.ErrorCode).JSON(resp)
-		}
-		resp := types.NewApiResponse(false, err.Error(), http.StatusInternalServerError)
-		return c.Status(resp.ErrorCode).JSON(resp)
-	}}
+	config := fiber.Config{
+		AppName:      "Backend",
+		ErrorHandler: api.HandleError,
+	}
 
 	app := fiber.New(config)
 
@@ -65,20 +60,25 @@ func main() {
 
 	// handlers
 	todoHandler := api.NewTodoHandler(databaseStore)
+	authHandler := api.NewAuthHandler(userStore)
 	userHandler := api.NewUserHandler(userStore)
 	app.Get("/swagger/*", swagger.HandlerDefault)
 
 	// routes
 	app.Get("/api/health", api.HealthCheck)
-	app.Post("/api/login", userHandler.HandleLogin)
+	app.Post("/api/register", authHandler.HandleRegister)
+	app.Post("/api/login", authHandler.HandleLogin)
 
 	route := app.Group("/api/v1", api.JWT(userStore))
-	route.Get("/todos", todoHandler.HandleGetTodos)
 	route.Post("/todos", todoHandler.HandleInsertTodo)
-	route.Delete("/todos/:id", todoHandler.HandleDeleteTodoByID)
-	route.Put("/todos/:id", todoHandler.HandleUpdateTodo)
-	route.Patch("/todos", todoHandler.HandlePatchTodo)
+	route.Get("/todos", todoHandler.HandleGetTodos)
+	route.Put("/todos/:id", todoHandler.HandlePutTodo)
 	route.Get("/todos/:id", todoHandler.HandleGetTodoByID)
+	route.Patch("/todos/:id", todoHandler.HandlePatchTodo)
+	route.Delete("/todos/:id", todoHandler.HandleDeleteTodoByID)
+
+	route.Get("/users", userHandler.HandleGetUsers)
+	route.Get("/users/:id", userHandler.HandleGetUserByID)
 
 	// serve
 	if err := app.Listen(os.Getenv("LISTEN_ADDRESS")); err != nil {
