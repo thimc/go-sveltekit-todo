@@ -4,7 +4,7 @@ import "github.com/gofiber/fiber/v2"
 
 //	@Summary		Show the status of server.
 //	@Description	get the status of server.
-//	@Tags			health
+//	@Tags			misc
 //	@Accept			*/*
 //	@Produce		plain
 //	@Success		200	"OK"
