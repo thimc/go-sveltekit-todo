@@ -3,6 +3,7 @@ package store
 import (
 	"context"
 	"database/sql"
+	"fmt"
 
 	"github.com/thimc/go-backend/types"
 )
@@ -15,7 +16,6 @@ type UserStorer interface {
 	CreateUser(context.Context, *types.User) (*types.User, error)
 	UpdateUser(context.Context, int64, *types.User) error
 
-	Close() error
 	init() error
 }
 
@@ -23,7 +23,7 @@ type PostgreUserStore struct {
 	db *sql.DB
 }
 
-func NewPostgreUserStore(s *PostgreStore) (*PostgreUserStore, error) {
+func NewPostgreUserStore(s *PostgreTodoStore) (*PostgreUserStore, error) {
 	store := &PostgreUserStore{
 		db: s.db,
 	}
@@ -43,10 +43,6 @@ func (s *PostgreUserStore) init() error {
 	return err
 }
 
-func (s *PostgreUserStore) Close() error {
-	return s.db.Close()
-}
-
 func (s *PostgreUserStore) GetUsers(ctx context.Context) ([]*types.User, error) {
 	users := []*types.User{}
 
@@ -63,9 +59,7 @@ func (s *PostgreUserStore) GetUsers(ctx context.Context) ([]*types.User, error) 
 	}
 
 	return users, nil
-
 }
-
 
 func (s *PostgreUserStore) GetUserByID(ctx context.Context, id int64) (*types.User, error) {
 	var user *types.User
@@ -106,6 +100,15 @@ func (s *PostgreUserStore) GetUserByEmail(ctx context.Context, email string) (*t
 }
 
 func (s *PostgreUserStore) CreateUser(ctx context.Context, u *types.User) (*types.User, error) {
+
+	user, err := s.GetUserByEmail(ctx, u.Email)
+	if err != nil {
+		return nil, err
+	}
+	if user != nil {
+		return nil, fmt.Errorf("user exists already")
+	}
+
 	query := `INSERT INTO todo_user(email, encrypted_password)
 				VALUES($1, $2) RETURNING id;`
 	rows, err := s.db.QueryContext(ctx, query, u.Email, u.EncryptedPassword)

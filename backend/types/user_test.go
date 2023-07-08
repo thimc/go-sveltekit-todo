@@ -4,7 +4,7 @@ import (
 	"testing"
 )
 
-func TestUserPasswordValidation(t *testing.T) {
+func TestNewUserValidation(t *testing.T) {
 	params := UserParams{
 		Email:    "test@test.org",
 		Password: "test-password",
@@ -18,3 +18,4 @@ func TestUserPasswordValidation(t *testing.T) {
 		t.Fatalf("expected password validation %v, got %v", nil, err)
 	}
 }
+

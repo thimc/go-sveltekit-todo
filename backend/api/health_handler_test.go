@@ -10,9 +10,6 @@ import (
 )
 
 func TestHealthCheck(t *testing.T) {
-	store := setup(t)
-	defer store.Close()
-
 	app := fiber.New()
 	app.Get("/health", HealthCheck)
 

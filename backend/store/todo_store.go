@@ -13,7 +13,7 @@ import (
 	_ "github.com/lib/pq"
 )
 
-type DatabaseStorer interface {
+type TodoStorer interface {
 	GetTodos(context.Context) ([]*types.Todo, error)
 	GetTodoByID(context.Context, int64) (*types.Todo, error)
 	InsertTodo(context.Context, *types.Todo) (*types.Todo, error)
@@ -24,11 +24,11 @@ type DatabaseStorer interface {
 	Close() error
 }
 
-type PostgreStore struct {
+type PostgreTodoStore struct {
 	db *sql.DB
 }
 
-func NewPostgreStore(connectionStr string) (*PostgreStore, error) {
+func NewPostgreTodoStore(connectionStr string) (*PostgreTodoStore, error) {
 	db, err := sql.Open("postgres", connectionStr)
 	if err != nil {
 		return nil, err
@@ -36,7 +36,7 @@ func NewPostgreStore(connectionStr string) (*PostgreStore, error) {
 	if err := db.Ping(); err != nil {
 		return nil, err
 	}
-	store := &PostgreStore{
+	store := &PostgreTodoStore{
 		db: db,
 	}
 	if err := store.init(); err != nil {
@@ -46,7 +46,7 @@ func NewPostgreStore(connectionStr string) (*PostgreStore, error) {
 	return store, nil
 }
 
-func (s *PostgreStore) init() error {
+func (s *PostgreTodoStore) init() error {
 	query := `CREATE TABLE IF NOT EXISTS todo (
 		id SERIAL PRIMARY KEY,
 		title VARCHAR(100),
@@ -62,11 +62,11 @@ func (s *PostgreStore) init() error {
 	return err
 }
 
-func (s *PostgreStore) Close() error {
+func (s *PostgreTodoStore) Close() error {
 	return s.db.Close()
 }
 
-func (s *PostgreStore) GetTodos(ctx context.Context) ([]*types.Todo, error) {
+func (s *PostgreTodoStore) GetTodos(ctx context.Context) ([]*types.Todo, error) {
 	todos := []*types.Todo{}
 
 	rows, err := s.db.QueryContext(ctx, `SELECT * FROM todo`)
@@ -85,7 +85,7 @@ func (s *PostgreStore) GetTodos(ctx context.Context) ([]*types.Todo, error) {
 	return todos, nil
 }
 
-func (s *PostgreStore) GetTodoByID(ctx context.Context, id int64) (*types.Todo, error) {
+func (s *PostgreTodoStore) GetTodoByID(ctx context.Context, id int64) (*types.Todo, error) {
 	var todo *types.Todo
 
 	rows, err := s.db.QueryContext(ctx, `SELECT * FROM todo
@@ -104,7 +104,7 @@ func (s *PostgreStore) GetTodoByID(ctx context.Context, id int64) (*types.Todo, 
 	return todo, nil
 }
 
-func (s *PostgreStore) InsertTodo(ctx context.Context, t *types.Todo) (*types.Todo, error) {
+func (s *PostgreTodoStore) InsertTodo(ctx context.Context, t *types.Todo) (*types.Todo, error) {
 	query := `INSERT INTO todo(title, content, created, created_by, done)
 				VALUES($1, $2, NOW(), $3, $4) RETURNING id;`
 	rows, err := s.db.QueryContext(ctx, query, t.Title, t.Content, t.CreatedBy, t.Done)
@@ -122,7 +122,7 @@ func (s *PostgreStore) InsertTodo(ctx context.Context, t *types.Todo) (*types.To
 	return t, nil
 }
 
-func (s *PostgreStore) UpdateTodoByID(ctx context.Context, t types.UpdateTodoParams, id int64) error {
+func (s *PostgreTodoStore) UpdateTodoByID(ctx context.Context, t types.UpdateTodoParams, id int64) error {
 	query := `UPDATE todo
 				SET title = $1, content = $2, created = $3, updated = $4, created_by = $5, updated_by = $6, done = $7
 				WHERE id = $8`
@@ -131,7 +131,7 @@ func (s *PostgreStore) UpdateTodoByID(ctx context.Context, t types.UpdateTodoPar
 	return err
 }
 
-func (s *PostgreStore) DeleteTodoByID(ctx context.Context, id int64) error {
+func (s *PostgreTodoStore) DeleteTodoByID(ctx context.Context, id int64) error {
 	todo, err := s.GetTodoByID(ctx, id)
 	if err != nil {
 		return err
@@ -145,7 +145,7 @@ func (s *PostgreStore) DeleteTodoByID(ctx context.Context, id int64) error {
 	return err
 }
 
-func (s *PostgreStore) PatchTodoByID(ctx context.Context, id int64, t types.UpdateTodoParams) error {
+func (s *PostgreTodoStore) PatchTodoByID(ctx context.Context, id int64, t types.UpdateTodoParams) error {
 	var (
 		sb  strings.Builder
 		ref = reflect.Indirect(reflect.ValueOf(t))

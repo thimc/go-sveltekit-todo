@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"os"
 
@@ -15,12 +16,6 @@ import (
 	"github.com/thimc/go-backend/store"
 )
 
-func init() {
-	if err := godotenv.Load(); err != nil {
-		log.Fatal(err)
-	}
-}
-
 // @title			Backend
 // @description	Go backend API using Fiber and PostgreSQL
 // @contact.name	Thim Cederlund
@@ -28,6 +23,10 @@ func init() {
 // @host			localhost:1111
 // @BasePath		/
 func main() {
+	if err := godotenv.Load(); err != nil {
+		log.Fatal(err)
+	}
+
 	// error handler
 	config := fiber.Config{
 		AppName:      "Backend",
@@ -46,7 +45,15 @@ func main() {
 	}))
 
 	// database connection
-	databaseStore, err := store.NewPostgreStore(os.Getenv("PSQL_URI"))
+	connStr := fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=%s",
+		os.Getenv("PSQL_HOST"),
+		os.Getenv("PSQL_PORT"),
+		os.Getenv("PSQL_USERNAME"),
+		os.Getenv("PSQL_PASSWORD"),
+		os.Getenv("PSQL_DATABASE"),
+		os.Getenv("PSQL_SSL"))
+
+	databaseStore, err := store.NewPostgreTodoStore(connStr)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -56,7 +63,6 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	defer userStore.Close()
 
 	// handlers
 	todoHandler := api.NewTodoHandler(databaseStore)

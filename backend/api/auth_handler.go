@@ -63,6 +63,9 @@ func (h *AuthHandler) HandleLogin(ctx *fiber.Ctx) error {
 	if err := ctx.BodyParser(&params); err != nil {
 		return types.NewApiResponse(false, err.Error(), http.StatusBadRequest)
 	}
+	if err := params.Validate(); err != nil {
+		return types.NewApiResponse(false, err.Error(), http.StatusUnauthorized)
+	}
 
 	user, err := h.store.GetUserByEmail(ctx.Context(), params.Email)
 	if err != nil {
@@ -74,7 +77,7 @@ func (h *AuthHandler) HandleLogin(ctx *fiber.Ctx) error {
 
 	claims, token, err := createJWT(user)
 	if err != nil {
-		return types.NewApiResponse(false, "internal server error", http.StatusInternalServerError)
+		return types.NewApiResponse(false, err.Error(), http.StatusUnauthorized)
 	}
 
 	return ctx.JSON(types.LoginResponse{

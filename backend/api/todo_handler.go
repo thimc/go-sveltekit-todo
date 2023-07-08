@@ -10,10 +10,10 @@ import (
 )
 
 type TodoHandler struct {
-	store store.DatabaseStorer
+	store store.TodoStorer
 }
 
-func NewTodoHandler(databaseStore store.DatabaseStorer) *TodoHandler {
+func NewTodoHandler(databaseStore store.TodoStorer) *TodoHandler {
 	return &TodoHandler{
 		store: databaseStore,
 	}

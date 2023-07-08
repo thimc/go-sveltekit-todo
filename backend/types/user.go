@@ -3,7 +3,6 @@ package types
 import (
 	"fmt"
 	"regexp"
-	"strings"
 
 	"golang.org/x/crypto/bcrypt"
 )
@@ -26,19 +25,16 @@ type UserParams struct {
 } // @name UserParams
 
 func (p *UserParams) Validate() error {
-	var b strings.Builder
 	if len(p.Email) < 5 {
-		b.WriteString(fmt.Sprintf("the email needs to be at least 5 characters\n"))
+		return fmt.Errorf("the email needs to be at least 5 characters\n")
 	}
 	if len(p.Password) < 5 {
-		b.WriteString(fmt.Sprintf("the password needs to be at least 5 characters\n"))
+		return fmt.Errorf("the password needs to be at least 5 characters\n")
 	}
+
 	emailRegex := regexp.MustCompile(`^[a-z0-9._%+\-]+@[a-z0-9.\-]+\.[a-z]{2,4}$`)
 	if !emailRegex.MatchString(p.Email) {
-		b.WriteString(fmt.Sprintf("the email needs to be a valid email address\n"))
-	}
-	if b.Len() > 1 {
-		return fmt.Errorf("%s", b.String())
+		return fmt.Errorf("the email needs to be a valid email address\n")
 	}
 
 	return nil
