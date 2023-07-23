@@ -1,34 +1,25 @@
 package api
 
 import (
-	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 
-	"github.com/gofiber/fiber/v2"
+	"github.com/thimc/go-svelte-todo/backend/utils"
 )
 
 func TestHealthCheck(t *testing.T) {
-	app := fiber.New()
-	app.Get("/health", HealthCheck)
+	req := httptest.NewRequest(http.MethodGet, "/", nil)
+	rr := httptest.NewRecorder()
 
-	req := httptest.NewRequest("GET", "/health", nil)
-	resp, err := app.Test(req)
-	if err != nil {
-		t.Fatal(err)
+	handler := http.HandlerFunc(utils.HandleAPIFunc(HandleHealthCheck))
+	handler.ServeHTTP(rr, req)
+
+	if status := rr.Code; status != http.StatusOK {
+		t.Errorf("expected http status code %v got %v", http.StatusOK, status)
 	}
 
-	if resp.StatusCode != http.StatusOK {
-		t.Fatalf("expected http code '%d', got '%d'", http.StatusOK, resp.StatusCode)
-	}
-
-	body, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	if string(body) != "OK" {
-		t.Fatalf("expected body '%s', got '%s'", "OK", string(body))
-	}
+    if rr.Body.String() != "OK" {
+		t.Errorf("expected http body %v got %v", "OK", rr.Body.String())
+    }
 }

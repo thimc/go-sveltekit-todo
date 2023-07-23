@@ -30,7 +30,7 @@ type InsertTodoParams struct {
 	// The content of the Todo
 	Content string `json:"content" example:"My new content" validate:"required"`
 	// PostgreSQL uses a ISO 8601-format
-	Created time.Time `json:"-" example:"2006-01-02 15:04:05.000-07" validate:"required"`
+	Created time.Time `json:"-" example:"2006-01-02T15:04:05Z" validate:"required"`
 	// User ID
 	CreatedBy int `json:"createdBy" example:"0" validate:"required"`
 	// This boolean determines if the todo has been completed
@@ -43,9 +43,9 @@ type UpdateTodoParams struct {
 	// The content of the Todo
 	Content *string `json:"content,omitempty" sql:"content" example:"My new content" validate:"required"`
 	// PostgreSQL uses a ISO 8601-format
-	Created *time.Time `json:"created,omitempty" sql:"created" example:"2006-01-02 15:04:05.000-07" validate:"required"`
+	Created *time.Time `json:"created,omitempty" sql:"created" example:"2006-01-02T15:04:05Z" validate:"required"`
 	// PostgreSQL uses a ISO 8601-format
-	Updated *time.Time `json:"updated,omitempty" sql:"updated" example:"2006-01-02 15:04:05.000-07" validate:"required"`
+	Updated *time.Time `json:"updated,omitempty" sql:"updated" example:"2006-01-02T15:04:05Z" validate:"required"`
 	// User ID
 	CreatedBy *int `json:"createdBy,omitempty" sql:"created_by" example:"0" validate:"required"`
 	// User ID
@@ -54,6 +54,13 @@ type UpdateTodoParams struct {
 	Done *bool `json:"done,omitempty" sql:"done" example:"false" validate:"required"`
 } // @name UpdateTodoParams
 
+type TodoGetAllResponse struct {
+	// The length of the `result` array
+	Count int `json:"count" example:"1"`
+	// Array of the todos
+	Result []*Todo `json:"result"`
+} // @name TodoGetAllResponse
+
 func NewTodoFromParams(params InsertTodoParams) *Todo {
 	return &Todo{
 		Title:     params.Title,
@@ -61,6 +68,13 @@ func NewTodoFromParams(params InsertTodoParams) *Todo {
 		Created:   time.Now().UTC(),
 		CreatedBy: params.CreatedBy,
 		Done:      params.Done,
+	}
+}
+
+func NewTodoGetAllResponse(todos []*Todo) *TodoGetAllResponse {
+	return &TodoGetAllResponse{
+		Count:  len(todos),
+		Result: todos,
 	}
 }
 

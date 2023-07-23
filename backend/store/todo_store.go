@@ -8,9 +8,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/thimc/go-backend/types"
-
 	_ "github.com/lib/pq"
+	"github.com/thimc/go-svelte-todo/backend/types"
 )
 
 type TodoStorer interface {
@@ -88,8 +87,7 @@ func (s *PostgreTodoStore) GetTodos(ctx context.Context) ([]*types.Todo, error) 
 func (s *PostgreTodoStore) GetTodoByID(ctx context.Context, id int64) (*types.Todo, error) {
 	var todo *types.Todo
 
-	rows, err := s.db.QueryContext(ctx, `SELECT * FROM todo
-								WHERE id = $1 LIMIT 1`, id)
+	rows, err := s.db.QueryContext(ctx, `SELECT * FROM todo WHERE id = $1 LIMIT 1`, id)
 	if err != nil {
 		return nil, err
 	}
@@ -101,9 +99,14 @@ func (s *PostgreTodoStore) GetTodoByID(ctx context.Context, id int64) (*types.To
 		}
 	}
 
+	if todo == nil {
+		return nil, fmt.Errorf("unknown ID: %d", id)
+	}
+
 	return todo, nil
 }
 
+// Inserts a ``*types.Todo`` and mutates the ``ID`` property to that of the ID from Postgre.
 func (s *PostgreTodoStore) InsertTodo(ctx context.Context, t *types.Todo) (*types.Todo, error) {
 	query := `INSERT INTO todo(title, content, created, created_by, done)
 				VALUES($1, $2, NOW(), $3, $4) RETURNING id;`
@@ -123,10 +126,17 @@ func (s *PostgreTodoStore) InsertTodo(ctx context.Context, t *types.Todo) (*type
 }
 
 func (s *PostgreTodoStore) UpdateTodoByID(ctx context.Context, t types.UpdateTodoParams, id int64) error {
-	query := `UPDATE todo
-				SET title = $1, content = $2, created = $3, updated = $4, created_by = $5, updated_by = $6, done = $7
+	query := `UPDATE todo SET title = $1, content = $2, created = $3, updated = $4, created_by = $5, updated_by = $6, done = $7
 				WHERE id = $8`
-	_, err := s.db.ExecContext(ctx, query, t.Title, t.Content, t.UpdatedBy, id)
+	res, err := s.db.ExecContext(ctx, query, t.Title, t.Content, t.Created, t.Updated, t.CreatedBy, t.UpdatedBy, t.Done, id)
+
+	affected, err := res.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if affected == 0 {
+		return fmt.Errorf("unknown todo ID: %d", id)
+	}
 
 	return err
 }
@@ -139,9 +149,14 @@ func (s *PostgreTodoStore) DeleteTodoByID(ctx context.Context, id int64) error {
 	if todo == nil {
 		return fmt.Errorf("unknown id: %d", id)
 	}
-	_, err = s.db.ExecContext(ctx, `DELETE FROM todo
-						WHERE id = $1`, id)
-
+	res, err := s.db.ExecContext(ctx, `DELETE FROM todo WHERE id = $1`, id)
+	affected, err := res.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if affected == 0 {
+		return fmt.Errorf("unknown todo ID: %d", id)
+	}
 	return err
 }
 
@@ -179,16 +194,24 @@ func (s *PostgreTodoStore) PatchTodoByID(ctx context.Context, id int64, t types.
 		sb.WriteString(", ")
 	}
 	query := fmt.Sprintf("UPDATE todo SET %s WHERE id = %d", sb.String()[:len(sb.String())-2], id)
-	_, err := s.db.ExecContext(ctx, query)
+	res, err := s.db.ExecContext(ctx, query)
+
+	affected, err := res.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if affected == 0 {
+		return fmt.Errorf("unknown ID: %d", id)
+	}
 
 	return err
 }
 
 func scanTodo(rows *sql.Rows) (*types.Todo, error) {
 	todo := new(types.Todo)
-	// FIXME: if we return the error here any NULL value in the
-	// database will cause the internal SQL scanner to throw an error.
-	_ = rows.Scan(
+	// TODO/FIXME: if we return the error here any NULL value in the database
+	//             will cause the internal SQL scanner to throw an error.
+	rows.Scan(
 		&todo.ID,
 		&todo.Title,
 		&todo.Content,
@@ -197,6 +220,5 @@ func scanTodo(rows *sql.Rows) (*types.Todo, error) {
 		&todo.CreatedBy,
 		&todo.UpdatedBy,
 		&todo.Done)
-
 	return todo, nil
 }

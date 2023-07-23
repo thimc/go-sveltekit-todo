@@ -3,48 +3,44 @@ package main
 import (
 	"fmt"
 	"log"
+	"net/http"
 	"os"
 
-	"github.com/gofiber/fiber/v2"
-	"github.com/gofiber/fiber/v2/middleware/cors"
-	"github.com/gofiber/fiber/v2/middleware/logger"
-	"github.com/gofiber/fiber/v2/middleware/recover"
-	"github.com/gofiber/swagger"
+	"github.com/gorilla/mux"
 	"github.com/joho/godotenv"
-	"github.com/thimc/go-backend/api"
-	_ "github.com/thimc/go-backend/docs"
-	"github.com/thimc/go-backend/store"
+	"github.com/thimc/go-svelte-todo/backend/api"
+	"github.com/thimc/go-svelte-todo/backend/api/middleware"
+	"github.com/thimc/go-svelte-todo/backend/store"
+	"github.com/thimc/go-svelte-todo/backend/utils"
+
+	swagger "github.com/swaggo/http-swagger/v2"
+	_ "github.com/thimc/go-svelte-todo/backend/docs"
 )
 
 // @title			Backend
-// @description	Go backend API using Fiber and PostgreSQL
+// @description		Go backend API using Gorilla Mux and PostgreSQL
 // @contact.name	Thim Cederlund
 // @license.name	MIT
-// @host			localhost:1111
+// @host			localhost:1234
 // @BasePath		/
 func main() {
 	if err := godotenv.Load(); err != nil {
 		log.Fatal(err)
 	}
+	listenAddr := os.Getenv("LISTEN_ADDRESS")
 
-	// error handler
-	config := fiber.Config{
-		AppName:      "Backend",
-		ErrorHandler: api.HandleError,
-	}
+	r := mux.NewRouter()
+	r.Use(middleware.Logger)
 
-	app := fiber.New(config)
+	r.PathPrefix("/swagger/").Handler(swagger.Handler(
+		swagger.DeepLinking(true),
+		swagger.DocExpansion("none"),
+		swagger.DomID("swagger-ui"),
+	)).Methods(http.MethodGet)
+	log.Printf("Serving swagger docs on http://localhost%s/swagger/\n", listenAddr)
 
-	// middleware
-	app.Use(recover.New())
-	app.Use(logger.New(logger.Config{
-		Format: "[${ip}]:${port} ${status} - ${method} ${path} ${latency}\n",
-	}))
-	app.Use(cors.New(cors.Config{
-		AllowOrigins: "*",
-	}))
-
-	// database connection
+	// stores
+	log.Printf("Connecting to the database..")
 	connStr := fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=%s",
 		os.Getenv("PSQL_HOST"),
 		os.Getenv("PSQL_PORT"),
@@ -52,13 +48,11 @@ func main() {
 		os.Getenv("PSQL_PASSWORD"),
 		os.Getenv("PSQL_DATABASE"),
 		os.Getenv("PSQL_SSL"))
-
 	databaseStore, err := store.NewPostgreTodoStore(connStr)
 	if err != nil {
 		log.Fatal(err)
 	}
 	defer databaseStore.Close()
-
 	userStore, err := store.NewPostgreUserStore(databaseStore)
 	if err != nil {
 		log.Fatal(err)
@@ -68,26 +62,34 @@ func main() {
 	todoHandler := api.NewTodoHandler(databaseStore)
 	authHandler := api.NewAuthHandler(userStore)
 	userHandler := api.NewUserHandler(userStore)
-	app.Get("/swagger/*", swagger.HandlerDefault)
 
 	// routes
-	app.Get("/api/health", api.HealthCheck)
-	app.Post("/api/register", authHandler.HandleRegister)
-	app.Post("/api/login", authHandler.HandleLogin)
+	route := r.PathPrefix("/api").Subrouter()
+	v1 := route.PathPrefix("/v1").Subrouter()
 
-	route := app.Group("/api/v1", api.JWT(userStore))
-	route.Post("/todos", todoHandler.HandleInsertTodo)
-	route.Get("/todos", todoHandler.HandleGetTodos)
-	route.Put("/todos/:id", todoHandler.HandlePutTodo)
-	route.Get("/todos/:id", todoHandler.HandleGetTodoByID)
-	route.Patch("/todos/:id", todoHandler.HandlePatchTodo)
-	route.Delete("/todos/:id", todoHandler.HandleDeleteTodoByID)
+	// middleware
+	jwt := middleware.NewJWTMiddleware(userStore)
+	v1.Use(jwt.Middleware)
 
-	route.Get("/users", userHandler.HandleGetUsers)
-	route.Get("/users/:id", userHandler.HandleGetUserByID)
+	route.HandleFunc("/health", utils.HandleAPIFunc(api.HandleHealthCheck)).Methods(http.MethodGet)
+	route.HandleFunc("/register", utils.HandleAPIFunc(authHandler.HandleRegister)).Methods(http.MethodPost)
+	route.HandleFunc("/login", utils.HandleAPIFunc(authHandler.HandleLogin)).Methods(http.MethodPost)
 
-	// serve
-	if err := app.Listen(os.Getenv("LISTEN_ADDRESS")); err != nil {
-		log.Fatal(err)
-	}
+	// todo
+	v1.HandleFunc("/todos", utils.HandleAPIFunc(todoHandler.HandleGetTodos)).Methods(http.MethodGet)
+	v1.HandleFunc("/todos", utils.HandleAPIFunc(todoHandler.HandleInsertTodo)).Methods(http.MethodPost)
+	v1.HandleFunc("/todos/{id}", utils.HandleAPIFunc(todoHandler.HandlePutTodo)).Methods(http.MethodPut)
+	v1.HandleFunc("/todos/{id}", utils.HandleAPIFunc(todoHandler.HandleGetTodoByID)).Methods(http.MethodGet)
+	v1.HandleFunc("/todos/{id}", utils.HandleAPIFunc(todoHandler.HandlePatchTodoByID)).Methods(http.MethodPatch)
+	v1.HandleFunc("/todos/{id}", utils.HandleAPIFunc(todoHandler.HandleDeleteTodoByID)).Methods(http.MethodDelete)
+
+	// users
+	v1.HandleFunc("/users", utils.HandleAPIFunc(userHandler.HandleGetUsers)).Methods(http.MethodGet)
+	v1.HandleFunc("/users/{id}", utils.HandleAPIFunc(userHandler.HandleGetUserByID)).Methods(http.MethodGet)
+
+	v1.HandleFunc("/user/password", utils.HandleAPIFunc(userHandler.HandlePutUserPassword)).Methods(http.MethodPut)
+
+	log.Printf("Serving on %s...", listenAddr)
+	log.Fatal(http.ListenAndServe(listenAddr, r))
 }
+

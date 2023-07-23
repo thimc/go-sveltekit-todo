@@ -1,11 +1,14 @@
 package api
 
 import (
+	"encoding/json"
+	"fmt"
 	"net/http"
 
-	"github.com/gofiber/fiber/v2"
-	"github.com/thimc/go-backend/store"
-	"github.com/thimc/go-backend/types"
+	"github.com/thimc/go-svelte-todo/backend/api/middleware"
+	"github.com/thimc/go-svelte-todo/backend/store"
+	"github.com/thimc/go-svelte-todo/backend/types"
+	"github.com/thimc/go-svelte-todo/backend/utils"
 )
 
 type AuthHandler struct {
@@ -27,27 +30,27 @@ func NewAuthHandler(store store.UserStorer) *AuthHandler {
 // @Success		200	{object}	types.User
 // @Router		/api/register [post]
 // @Security	ApiKeyAuth
-func (h *AuthHandler) HandleRegister(ctx *fiber.Ctx) error {
+func (h *AuthHandler) HandleRegister(w http.ResponseWriter, r *http.Request) *types.APIError {
 	var params types.UserParams
-	if err := ctx.BodyParser(&params); err != nil {
-		return types.NewApiResponse(false, err.Error(), http.StatusBadRequest)
+	if err := json.NewDecoder(r.Body).Decode(&params); err != nil {
+		return types.NewAPIError(false, err, http.StatusBadRequest)
 	}
 
 	if err := params.Validate(); err != nil {
-		return types.NewApiResponse(false, err.Error(), http.StatusBadRequest)
+		return types.NewAPIError(false, err, http.StatusBadRequest)
 	}
 
 	user, err := types.NewUser(params.Email, params.Password)
 	if err != nil {
-		return types.NewApiResponse(false, err.Error(), http.StatusBadRequest)
+		return types.NewAPIError(false, err, http.StatusBadRequest)
 	}
 
-	insertedUser, err := h.store.CreateUser(ctx.Context(), user)
+	insertedUser, err := h.store.CreateUser(r.Context(), user)
 	if err != nil {
-		return types.NewApiResponse(false, err.Error(), http.StatusBadRequest)
+		return types.NewAPIError(false, err, http.StatusBadRequest)
 	}
 
-	return ctx.JSON(insertedUser)
+	return utils.ResponseWriteJSON(w, insertedUser)
 }
 
 // @Summary		Login a user.
@@ -58,32 +61,32 @@ func (h *AuthHandler) HandleRegister(ctx *fiber.Ctx) error {
 // @Produce		json
 // @Success		200	{object}	types.LoginResponse
 // @Router		/api/login [post]
-func (h *AuthHandler) HandleLogin(ctx *fiber.Ctx) error {
+func (h *AuthHandler) HandleLogin(w http.ResponseWriter, r *http.Request) *types.APIError {
 	var params types.UserParams
-	if err := ctx.BodyParser(&params); err != nil {
-		return types.NewApiResponse(false, err.Error(), http.StatusBadRequest)
+	if err := json.NewDecoder(r.Body).Decode(&params); err != nil {
+		return types.NewAPIError(false, err, http.StatusBadRequest)
 	}
 	if err := params.Validate(); err != nil {
-		return types.NewApiResponse(false, err.Error(), http.StatusUnauthorized)
+		return types.NewAPIError(false, err, http.StatusBadRequest)
 	}
 
-	user, err := h.store.GetUserByEmail(ctx.Context(), params.Email)
+	user, err := h.store.GetUserByEmail(r.Context(), params.Email)
 	if err != nil {
-		return types.NewApiResponse(false, err.Error(), http.StatusUnauthorized)
+		return types.NewAPIError(false, err, http.StatusBadRequest)
 	}
 	if err := types.ValidPassword(user.EncryptedPassword, params.Password); err != nil {
-		return types.NewApiResponse(false, "access denied", http.StatusUnauthorized)
+		return types.NewAPIError(false, fmt.Errorf("Access denied"), http.StatusUnauthorized)
 	}
 
-	claims, token, err := createJWT(user)
+	claims, token, err := middleware.CreateJWT(user)
 	if err != nil {
-		return types.NewApiResponse(false, err.Error(), http.StatusUnauthorized)
+		return types.NewAPIError(false, err, http.StatusBadRequest)
 	}
 
-	return ctx.JSON(types.LoginResponse{
+	return utils.ResponseWriteJSON(w, types.LoginResponse{
 		ID:        user.ID,
 		Email:     user.Email,
 		Token:     token,
-		ExpiresAt: claims["expires"].(int64),
+		ExpiresAt: claims["expiresAt"].(int64),
 	})
 }

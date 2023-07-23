@@ -1,12 +1,14 @@
 package api
 
 import (
+	"encoding/json"
 	"net/http"
 	"strconv"
 
-	"github.com/gofiber/fiber/v2"
-	"github.com/thimc/go-backend/store"
-	"github.com/thimc/go-backend/types"
+	"github.com/gorilla/mux"
+	"github.com/thimc/go-svelte-todo/backend/store"
+	"github.com/thimc/go-svelte-todo/backend/types"
+	"github.com/thimc/go-svelte-todo/backend/utils"
 )
 
 type TodoHandler struct {
@@ -19,22 +21,23 @@ func NewTodoHandler(databaseStore store.TodoStorer) *TodoHandler {
 	}
 }
 
+
 // @Summary		Get all todos.
 // @Description	fetch every todo available.
 // @Tags		todos
 // @Param		Authorization	header	string	true	"JWT Token, needs to start with Bearer"
 // @Accept		*/*
 // @Produce		json
-// @Success		200	{object}	[]types.Todo
+// @Success		200	{object}	types.TodoGetAllResponse
 // @Router		/api/v1/todos [get]
 // @Security	ApiKeyAuth
-func (h *TodoHandler) HandleGetTodos(c *fiber.Ctx) error {
-	todos, err := h.store.GetTodos(c.Context())
+func (h *TodoHandler) HandleGetTodos(w http.ResponseWriter, r *http.Request) *types.APIError {
+	todos, err := h.store.GetTodos(r.Context())
 	if err != nil {
-		return c.JSON(types.NewApiResponse(false, err.Error(), http.StatusInternalServerError))
+		return types.NewAPIError(false, err, http.StatusInternalServerError)
 	}
 
-	return c.JSON(map[string]any{"count": len(todos), "result": todos})
+	return utils.ResponseWriteJSON(w, types.NewTodoGetAllResponse(todos))
 }
 
 // @Summary		Get a todo by the ID.
@@ -46,20 +49,17 @@ func (h *TodoHandler) HandleGetTodos(c *fiber.Ctx) error {
 // @Success		200	{object}	types.Todo
 // @Router		/api/v1/todos/{id} [get]
 // @Security	ApiKeyAuth
-func (h *TodoHandler) HandleGetTodoByID(c *fiber.Ctx) error {
-	id, err := strconv.Atoi(c.Params("id"))
+func (h *TodoHandler) HandleGetTodoByID(w http.ResponseWriter, r *http.Request) *types.APIError {
+	id, err := strconv.Atoi(mux.Vars(r)["id"])
 	if err != nil {
-		return types.NewApiResponse(false, err.Error(), http.StatusBadRequest)
+		return types.NewAPIError(false, err, http.StatusBadRequest)
 	}
-	todo, err := h.store.GetTodoByID(c.Context(), int64(id))
+	todo, err := h.store.GetTodoByID(r.Context(), int64(id))
 	if err != nil {
-		return types.NewApiResponse(false, err.Error(), http.StatusNotFound)
-	}
-	if todo == nil {
-		return types.NewApiResponse(false, "invalid todo id", http.StatusNotFound)
+		return types.NewAPIError(false, err, http.StatusNotFound)
 	}
 
-	return c.JSON(todo)
+	return utils.ResponseWriteJSON(w, todo)
 }
 
 // @Summary		Create a todo.
@@ -72,21 +72,21 @@ func (h *TodoHandler) HandleGetTodoByID(c *fiber.Ctx) error {
 // @Success		200	{object}	types.Todo
 // @Router		/api/v1/todos [post]
 // @Security	ApiKeyAuth
-func (h *TodoHandler) HandleInsertTodo(c *fiber.Ctx) error {
+func (h *TodoHandler) HandleInsertTodo(w http.ResponseWriter, r *http.Request) *types.APIError {
 	var params types.InsertTodoParams
-	if err := c.BodyParser(&params); err != nil {
-		return types.NewApiResponse(false, err.Error(), http.StatusBadRequest)
+	if err := json.NewDecoder(r.Body).Decode(&params); err != nil {
+		return types.NewAPIError(false, err, http.StatusBadRequest)
 	}
 	todo := types.NewTodoFromParams(params)
 	if err := todo.Validate(); err != nil {
-		return types.NewApiResponse(false, err.Error(), http.StatusBadRequest)
+		return types.NewAPIError(false, err, http.StatusBadRequest)
 	}
-	insertedTodo, err := h.store.InsertTodo(c.Context(), todo)
+	insertedTodo, err := h.store.InsertTodo(r.Context(), todo)
 	if err != nil {
-		return types.NewApiResponse(false, err.Error(), http.StatusBadRequest)
+		return types.NewAPIError(false, err, http.StatusBadRequest)
 	}
 
-	return c.JSON(insertedTodo)
+	return utils.ResponseWriteJSON(w, insertedTodo)
 }
 
 // @Summary		Replace a todo.
@@ -100,18 +100,18 @@ func (h *TodoHandler) HandleInsertTodo(c *fiber.Ctx) error {
 // @Success		200	{object}	nil
 // @Security	ApiKeyAuth
 // @Router		/api/v1/todos/{id} [put]
-func (h *TodoHandler) HandlePutTodo(c *fiber.Ctx) error {
-	id, err := strconv.Atoi(c.Params("id"))
+func (h *TodoHandler) HandlePutTodo(w http.ResponseWriter, r *http.Request) *types.APIError {
+	id, err := strconv.Atoi(mux.Vars(r)["id"])
 	if err != nil {
-		return types.NewApiResponse(false, err.Error(), http.StatusBadRequest)
+		return types.NewAPIError(false, err, http.StatusBadRequest)
 	}
 	var params types.UpdateTodoParams
-	if err := c.BodyParser(&params); err != nil {
-		return types.NewApiResponse(false, err.Error(), http.StatusBadRequest)
+	if err := json.NewDecoder(r.Body).Decode(&params); err != nil {
+		return types.NewAPIError(false, err, http.StatusBadRequest)
 	}
 
-	if err := h.store.UpdateTodoByID(c.Context(), params, int64(id)); err != nil {
-		return types.NewApiResponse(false, err.Error(), http.StatusInternalServerError)
+	if err := h.store.UpdateTodoByID(r.Context(), params, int64(id)); err != nil {
+		return types.NewAPIError(false, err, http.StatusBadRequest)
 	}
 
 	return nil
@@ -127,21 +127,21 @@ func (h *TodoHandler) HandlePutTodo(c *fiber.Ctx) error {
 // @Success		200	{object}	nil
 // @Router		/api/v1/todos/{id} [delete]
 // @Security	ApiKeyAuth
-func (h *TodoHandler) HandleDeleteTodoByID(c *fiber.Ctx) error {
-	id, err := strconv.Atoi(c.Params("id"))
+func (h *TodoHandler) HandleDeleteTodoByID(w http.ResponseWriter, r *http.Request) *types.APIError {
+	id, err := strconv.Atoi(mux.Vars(r)["id"])
 	if err != nil {
-		return types.NewApiResponse(false, err.Error(), http.StatusBadRequest)
+		return types.NewAPIError(false, err, http.StatusBadRequest)
 	}
 
-	if err := h.store.DeleteTodoByID(c.Context(), int64(id)); err != nil {
-		return types.NewApiResponse(false, err.Error(), http.StatusNotFound)
+	if err := h.store.DeleteTodoByID(r.Context(), int64(id)); err != nil {
+		return types.NewAPIError(false, err, http.StatusNotFound)
 	}
 
 	return nil
 }
 
 // @Summary		Patch a todo.
-// @Description	updates only the specified todo fields.
+// @Description	mutates a todos properties.
 // @Tags		todos
 // @Accept		json
 // @Param		Authorization	header	string	true	"JWT Token, needs to start with Bearer"
@@ -151,22 +151,20 @@ func (h *TodoHandler) HandleDeleteTodoByID(c *fiber.Ctx) error {
 // @Success		200	{object}	nil
 // Security		ApiKeyAuth
 // @Router		/api/v1/todos/{id} [patch]
-func (h *TodoHandler) HandlePatchTodo(c *fiber.Ctx) error {
-	id, err := strconv.Atoi(c.Params("id"))
+func (h *TodoHandler) HandlePatchTodoByID(w http.ResponseWriter, r *http.Request) *types.APIError {
+	id, err := strconv.Atoi(mux.Vars(r)["id"])
 	if err != nil {
-		return types.NewApiResponse(false, err.Error(), http.StatusBadRequest)
+		return types.NewAPIError(false, err, http.StatusBadRequest)
 	}
-	_ = id
 
 	var params types.UpdateTodoParams
-	if err := c.BodyParser(&params); err != nil {
-		return types.NewApiResponse(false, err.Error(), http.StatusBadRequest)
+	if err := json.NewDecoder(r.Body).Decode(&params); err != nil {
+		return types.NewAPIError(false, err, http.StatusBadRequest)
 	}
 
-	if err := h.store.PatchTodoByID(c.Context(), int64(id), params); err != nil {
-		return types.NewApiResponse(false, err.Error(), http.StatusNotFound)
+	if err := h.store.PatchTodoByID(r.Context(), int64(id), params); err != nil {
+		return types.NewAPIError(false, err, http.StatusNotFound)
 	}
 
 	return nil
 }
-

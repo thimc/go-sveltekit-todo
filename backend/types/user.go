@@ -25,13 +25,13 @@ type UserParams struct {
 } // @name UserParams
 
 func (p *UserParams) Validate() error {
-	if len(p.Email) < 5 {
-		return fmt.Errorf("the email needs to be at least 5 characters\n")
-	}
 	if len(p.Password) < 5 {
 		return fmt.Errorf("the password needs to be at least 5 characters\n")
 	}
 
+	if len(p.Email) < 5 {
+		return fmt.Errorf("the email needs to be at least 5 characters\n")
+	}
 	emailRegex := regexp.MustCompile(`^[a-z0-9._%+\-]+@[a-z0-9.\-]+\.[a-z]{2,4}$`)
 	if !emailRegex.MatchString(p.Email) {
 		return fmt.Errorf("the email needs to be a valid email address\n")
@@ -48,8 +48,21 @@ type LoginResponse struct {
 	// The token
 	Token string `json:"token"`
 	// Unix timestamp for when the token expires
-	ExpiresAt int64 `json:"expires" example:"1688751625"`
+	ExpiresAt int64 `json:"expiresAt" example:"1688751625"`
 } // @name LoginResponse
+
+type UserPutPasswordParams struct {
+	Password string `json:"password" example:"12345abcdefgh" validate:"required"`
+} // @name UserPutPasswordParams
+
+func (p *UserPutPasswordParams) Validate() error {
+	if len(p.Password) < 5 {
+		return fmt.Errorf("the password needs to be at least 5 characters\n")
+	}
+
+	return nil
+}
+
 
 func NewUser(email, password string) (*User, error) {
 	encrypted, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
