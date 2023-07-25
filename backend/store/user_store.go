@@ -87,8 +87,7 @@ func (s *PostgreUserStore) GetUserByID(ctx context.Context, id int64) (*types.Us
 func (s *PostgreUserStore) GetUserByEmail(ctx context.Context, email string) (*types.User, error) {
 	var user *types.User
 
-	rows, err := s.db.QueryContext(ctx, `SELECT * FROM todo_user
-								WHERE email = $1 LIMIT 1`, email)
+	rows, err := s.db.QueryContext(ctx, `SELECT * FROM todo_user WHERE email = $1 LIMIT 1`, email)
 	if err != nil {
 		return nil, err
 	}
@@ -100,12 +99,16 @@ func (s *PostgreUserStore) GetUserByEmail(ctx context.Context, email string) (*t
 		}
 	}
 
+	if user == nil {
+		return nil, fmt.Errorf("unknown email: %s", email)
+	}
+
 	return user, nil
 }
 
 func (s *PostgreUserStore) CreateUser(ctx context.Context, u *types.User) (*types.User, error) {
 	user, err := s.GetUserByEmail(ctx, u.Email)
-	if err != nil {
+	if err != nil && user != nil {
 		return nil, err
 	}
 	if user != nil {
