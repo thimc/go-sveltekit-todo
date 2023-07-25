@@ -69,7 +69,7 @@ func (h *UserHandler) HandleGetUserByID(w http.ResponseWriter, r *http.Request) 
 // @Tags		users
 // @Accept		json
 // @Param		Authorization	header	string	true	"JWT Token, needs to start with Bearer"
-// @Param		params	body	types.UserUpdatePasswordParams	true	"New user credentials"
+// @Param		params	body	types.UserPutPasswordParams	true	"New user credentials"
 // @Produce		json
 // @Success		200	{object}	nil
 // @Router		/api/v1/user/password [put]

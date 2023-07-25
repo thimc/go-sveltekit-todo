@@ -9,10 +9,11 @@ import (
 )
 
 func TestHealthCheck(t *testing.T) {
+	handler := http.HandlerFunc(utils.HandleAPIFunc(HandleHealthCheck))
+
 	req := httptest.NewRequest(http.MethodGet, "/", nil)
 	rr := httptest.NewRecorder()
 
-	handler := http.HandlerFunc(utils.HandleAPIFunc(HandleHealthCheck))
 	handler.ServeHTTP(rr, req)
 
 	if status := rr.Code; status != http.StatusOK {
