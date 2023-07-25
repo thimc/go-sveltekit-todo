@@ -66,13 +66,14 @@ func (h *AuthHandler) HandleLogin(w http.ResponseWriter, r *http.Request) *types
 	if err := json.NewDecoder(r.Body).Decode(&params); err != nil {
 		return types.NewAPIError(false, err, http.StatusBadRequest)
 	}
+
 	if err := params.Validate(); err != nil {
 		return types.NewAPIError(false, err, http.StatusBadRequest)
 	}
 
 	user, err := h.store.GetUserByEmail(r.Context(), params.Email)
 	if err != nil {
-		return types.NewAPIError(false, err, http.StatusBadRequest)
+		return types.NewAPIError(false, err, http.StatusUnauthorized)
 	}
 	if err := types.ValidPassword(user.EncryptedPassword, params.Password); err != nil {
 		return types.NewAPIError(false, fmt.Errorf("Access denied"), http.StatusUnauthorized)
