@@ -29,6 +29,8 @@ func NewTodoHandler(databaseStore store.TodoStorer) *TodoHandler {
 // @Accept		*/*
 // @Produce		json
 // @Success		200	{object}	types.TodoGetAllResponse
+// @Failure		400	{object}	types.APIError
+// @Failure		500	{object}	types.APIError
 // @Router		/api/v1/todos [get]
 // @Security	ApiKeyAuth
 func (h *TodoHandler) HandleGetTodos(w http.ResponseWriter, r *http.Request) *types.APIError {
@@ -47,6 +49,8 @@ func (h *TodoHandler) HandleGetTodos(w http.ResponseWriter, r *http.Request) *ty
 // @Param		id	path	int	true	"Todo ID"
 // @Produce		json
 // @Success		200	{object}	types.Todo
+// @Failure		400	{object}	types.APIError
+// @Failure		404	{object}	types.APIError
 // @Router		/api/v1/todos/{id} [get]
 // @Security	ApiKeyAuth
 func (h *TodoHandler) HandleGetTodoByID(w http.ResponseWriter, r *http.Request) *types.APIError {
@@ -70,6 +74,7 @@ func (h *TodoHandler) HandleGetTodoByID(w http.ResponseWriter, r *http.Request) 
 // @Param		params	body	types.InsertTodoParams	true	"Todo metadata"
 // @Produce		json
 // @Success		200	{object}	types.Todo
+// @Failure		400	{object}	types.APIError
 // @Router		/api/v1/todos [post]
 // @Security	ApiKeyAuth
 func (h *TodoHandler) HandleInsertTodo(w http.ResponseWriter, r *http.Request) *types.APIError {
@@ -98,6 +103,7 @@ func (h *TodoHandler) HandleInsertTodo(w http.ResponseWriter, r *http.Request) *
 // @Param		todo	body	types.UpdateTodoParams	true	"New todo data"
 // @Produce		json
 // @Success		200	{object}	nil
+// @Failure		400	{object}	types.APIError
 // @Security	ApiKeyAuth
 // @Router		/api/v1/todos/{id} [put]
 func (h *TodoHandler) HandlePutTodo(w http.ResponseWriter, r *http.Request) *types.APIError {
@@ -125,6 +131,8 @@ func (h *TodoHandler) HandlePutTodo(w http.ResponseWriter, r *http.Request) *typ
 // @Param		id	path	int	true	"Todo ID"
 // @Produce		json
 // @Success		200	{object}	nil
+// @Failure		400	{object}	types.APIError
+// @Failure		404	{object}	types.APIError
 // @Router		/api/v1/todos/{id} [delete]
 // @Security	ApiKeyAuth
 func (h *TodoHandler) HandleDeleteTodoByID(w http.ResponseWriter, r *http.Request) *types.APIError {
@@ -149,6 +157,8 @@ func (h *TodoHandler) HandleDeleteTodoByID(w http.ResponseWriter, r *http.Reques
 // @Param		todo	body	types.UpdateTodoParams	false	"New todo data"
 // @Produce		json
 // @Success		200	{object}	nil
+// @Failure		400	{object}	types.APIError
+// @Failure		404	{object}	types.APIError
 // Security		ApiKeyAuth
 // @Router		/api/v1/todos/{id} [patch]
 func (h *TodoHandler) HandlePatchTodoByID(w http.ResponseWriter, r *http.Request) *types.APIError {

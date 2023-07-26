@@ -30,6 +30,7 @@ func NewUserHandler(store store.UserStorer) *UserHandler {
 // @Param		Authorization	header	string	true	"JWT Token, needs to start with Bearer"
 // @Produce		json
 // @Success		200	{object}	[]types.User
+// @Failure		404	{object}	types.APIError
 // @Router		/api/v1/users [get]
 // @Security	ApiKeyAuth
 func (h *UserHandler) HandleGetUsers(w http.ResponseWriter, r *http.Request) *types.APIError {
@@ -49,6 +50,8 @@ func (h *UserHandler) HandleGetUsers(w http.ResponseWriter, r *http.Request) *ty
 // @Param		id	path	int	true	"Todo ID"
 // @Produce		json
 // @Success		200	{object}	types.User
+// @Failure		400	{object}	types.APIError
+// @Failure		404	{object}	types.APIError
 // @Router		/api/v1/users/{id} [get]
 // @Security	ApiKeyAuth
 func (h *UserHandler) HandleGetUserByID(w http.ResponseWriter, r *http.Request) *types.APIError {
@@ -72,6 +75,7 @@ func (h *UserHandler) HandleGetUserByID(w http.ResponseWriter, r *http.Request) 
 // @Param		params	body	types.UserPutPasswordParams	true	"New user credentials"
 // @Produce		json
 // @Success		200	{object}	nil
+// @Failure		400	{object}	types.APIError
 // @Router		/api/v1/user/password [put]
 // @Security	ApiKeyAuth
 func (h *UserHandler) HandlePutUserPassword(w http.ResponseWriter, r *http.Request) *types.APIError {

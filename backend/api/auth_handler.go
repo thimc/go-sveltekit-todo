@@ -28,6 +28,7 @@ func NewAuthHandler(store store.UserStorer) *AuthHandler {
 // @Param		params	body	types.UserParams	true	"User credentials"
 // @Produce		json
 // @Success		200	{object}	types.User
+// @Failure		400	{object}	types.APIError
 // @Router		/api/register [post]
 // @Security	ApiKeyAuth
 func (h *AuthHandler) HandleRegister(w http.ResponseWriter, r *http.Request) *types.APIError {
@@ -60,6 +61,8 @@ func (h *AuthHandler) HandleRegister(w http.ResponseWriter, r *http.Request) *ty
 // @Param		params	body	types.UserParams	true	"User credentials."
 // @Produce		json
 // @Success		200	{object}	types.LoginResponse
+// @Failure		400	{object}	types.APIError
+// @Failure		401	{object}	types.APIError
 // @Router		/api/login [post]
 func (h *AuthHandler) HandleLogin(w http.ResponseWriter, r *http.Request) *types.APIError {
 	var params types.UserParams
