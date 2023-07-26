@@ -69,7 +69,12 @@ func TestHandleGetTodosSuccess(t *testing.T) {
 		CreatedBy: insertedUser.ID,
 		Done:      false,
 	})
+
 	insertedTodo, err := testSuite.databaseStore.InsertTodo(context.TODO(), todo)
+	if err != nil {
+		t.Fatal(err)
+	}
+
 	defer func() {
 		err := testSuite.databaseStore.DeleteTodoByID(context.TODO(), int64(insertedTodo.ID))
 		if err != nil {
@@ -134,7 +139,16 @@ func TestHandleGetTodosSuccess(t *testing.T) {
 		t.Fatalf("expected todo item count above zero, got %v", getResp.Count)
 	}
 
-	gotTodo := getResp.Result[getResp.Count - 1]
+	var gotTodo *types.Todo
+	for _, t := range getResp.Result {
+		if t.ID == insertedTodo.ID {
+			gotTodo = t
+		}
+	}
+	if gotTodo.ID == 0 {
+		t.Fatal("expected the inserted todo in the get all todos response")
+	}
+
 	if gotTodo.Title != insertedTodo.Title {
 		t.Fatalf("expected todo title '%v', got '%v'", insertedTodo.Title, gotTodo.Title)
 	}
@@ -147,4 +161,8 @@ func TestHandleGetTodosSuccess(t *testing.T) {
 	if gotTodo.Done != insertedTodo.Done {
 		t.Fatalf("expected todo done status '%v', got '%v'", insertedTodo.Done, gotTodo.Done)
 	}
+	if gotTodo.CreatedBy != insertedTodo.CreatedBy {
+		t.Fatalf("expected created by user id '%v', got '%v'", insertedTodo.CreatedBy, gotTodo.CreatedBy)
+	}
+
 }

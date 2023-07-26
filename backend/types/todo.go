@@ -15,11 +15,11 @@ type Todo struct {
 	// PostgreSQL uses a ISO 8601-format
 	Created time.Time `json:"created" example:"2006-01-02 15:04:05.000-07"`
 	// PostgreSQL uses a ISO 8601-format
-	Updated time.Time `json:"updated" example:"2006-01-02 15:04:05.000-07"`
+	Updated *time.Time `json:"updated" example:"2006-01-02 15:04:05.000-07"`
 	// User ID
 	CreatedBy int `json:"createdBy" example:"0"`
 	// User ID
-	UpdatedBy int `json:"updatedBy" example:"0"`
+	UpdatedBy *int64 `json:"updatedBy" example:"0"`
 	// This boolean determines if the todo has been completed
 	Done bool `json:"done" example:"false"`
 } // @name Todo

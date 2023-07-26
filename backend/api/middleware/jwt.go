@@ -44,14 +44,14 @@ func (m *JWTMiddleware) Middleware(next http.Handler) http.Handler {
 
 		claims := tok.Claims.(jwt.MapClaims)
 		if time.Now().Unix() > int64(claims["expiresAt"].(float64)) {
-			utils.WriteJSON(w, types.NewAPIError(false, fmt.Errorf("Token expired"), http.StatusBadRequest))
+			utils.WriteJSON(w, types.NewAPIError(false, fmt.Errorf("Token expired"), http.StatusUnauthorized))
 			return
 		}
 
 		email := claims["email"].(string)
 		user, err := m.store.GetUserByEmail(r.Context(), email)
 		if err != nil {
-			utils.WriteJSON(w, types.NewAPIError(false, fmt.Errorf("Access denied"), http.StatusBadRequest))
+			utils.WriteJSON(w, types.NewAPIError(false, fmt.Errorf("Access denied"), http.StatusUnauthorized))
 			return
 		}
 

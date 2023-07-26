@@ -52,8 +52,8 @@ func (s *PostgreTodoStore) init() error {
 		content VARCHAR(1000),
 		created TIMESTAMP,
 		updated TIMESTAMP,
-		created_by SERIAL,
-		updated_by SERIAL,
+		created_by INTEGER,
+		updated_by INTEGER,
 		done BOOLEAN
 	);`
 	_, err := s.db.Exec(query)
@@ -106,10 +106,10 @@ func (s *PostgreTodoStore) GetTodoByID(ctx context.Context, id int64) (*types.To
 	return todo, nil
 }
 
-// Inserts a ``*types.Todo`` and mutates the ``ID`` property to that of the ID from Postgre.
+// Inserts a “*types.Todo“ and mutates the “ID“ property to that of the ID from Postgre.
 func (s *PostgreTodoStore) InsertTodo(ctx context.Context, t *types.Todo) (*types.Todo, error) {
 	query := `INSERT INTO todo(title, content, created, created_by, done)
-				VALUES($1, $2, NOW(), $3, $4) RETURNING id;`
+				VALUES        ($1,    $2,      NOW(),   $3,         $4) RETURNING id`
 	rows, err := s.db.QueryContext(ctx, query, t.Title, t.Content, t.CreatedBy, t.Done)
 	if err != nil {
 		return nil, err
@@ -208,10 +208,8 @@ func (s *PostgreTodoStore) PatchTodoByID(ctx context.Context, id int64, t types.
 }
 
 func scanTodo(rows *sql.Rows) (*types.Todo, error) {
-	todo := new(types.Todo)
-	// TODO/FIXME: if we return the error here any NULL value in the database
-	//             will cause the internal SQL scanner to throw an error.
-	rows.Scan(
+	var todo types.Todo
+	err := rows.Scan(
 		&todo.ID,
 		&todo.Title,
 		&todo.Content,
@@ -220,5 +218,5 @@ func scanTodo(rows *sql.Rows) (*types.Todo, error) {
 		&todo.CreatedBy,
 		&todo.UpdatedBy,
 		&todo.Done)
-	return todo, nil
+	return &todo, err
 }
