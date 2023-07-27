@@ -7,13 +7,19 @@ export const load: PageServerLoad = async ({ locals }) => {
 	const getTodos = async () => {
 		console.log('Fetching todos');
 		const token = user?.token ?? '';
-		const res = await fetch(`${API_URL}/api/v1/todos`, {
-			method: 'GET',
-			headers: { Authorization: `Bearer ${token}` }
-		});
-		const result = await res.json();
-		const todos = result.result;
-		return todos;
+		try {
+			const res = await fetch(`${API_URL}/api/v1/todos`, {
+				method: 'GET',
+				headers: { Authorization: `Bearer ${token}` }
+			});
+			const result = await res.json();
+
+			const todos = result.result;
+			return todos;
+		} catch (err) {
+			console.log('getTodos error:', err);
+		}
+		return null;
 	};
 
 	return {
