@@ -1,14 +1,16 @@
 import { fail, redirect } from '@sveltejs/kit';
 import type { Actions, PageServerLoad } from './$types';
 
-export const load: PageServerLoad = async ({ cookies }) => {
+export const load: PageServerLoad = async ({ url, cookies }) => {
+  const email = url.searchParams.get('registeredEmail');
 	return {
+    registeredEmail: email,
 		cookie: cookies.get('jwt')
 	};
 };
 
 export const actions: Actions = {
-	login: async ({ request, cookies }) => {
+	default: async ({ request, cookies }) => {
 		const formData = await request.formData();
 		const email = formData.get('email');
 		const password = formData.get('password');
@@ -33,7 +35,7 @@ export const actions: Actions = {
 			cookies.set('jwt', result.token, {
 				path: '/',
 				sameSite: 'strict',
-        httpOnly: true,
+				httpOnly: true,
 				secure: false,
 				maxAge: result.expiresAt - now
 			});
@@ -45,6 +47,6 @@ export const actions: Actions = {
 				email
 			});
 		}
-		throw redirect(300, '/');
+		throw redirect(301, '/');
 	}
 };

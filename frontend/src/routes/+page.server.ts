@@ -43,10 +43,8 @@ export const actions: Actions = {
 			console.log('Create todo result:', result);
 			if (result.success == false) {
 				return {
-					error: {
-						success: result.success,
-						message: result.message
-					}
+					success: result.success,
+					message: result.message
 				};
 			}
 		} catch (err) {
