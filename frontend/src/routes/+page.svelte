@@ -1,106 +1,106 @@
 <script>
-	import { enhance } from '$app/forms';
+  import { enhance } from '$app/forms';
 	import { fly, fade } from 'svelte/transition';
 
 	export let data;
+	export let form;
 </script>
 
-<main class="centered">
-	<form method="POST" action="?/create" use:enhance>
-		<h1>my todos</h1>
-		<label>
-			<input type="text" autocomplete="off" name="description" />
-		</label>
+<div>
+	<form method="POST" action="?/createTodo" use:enhance>
+		<!--		<label for="todo">my todos</label>-->
+		<input type="text" name="content" placeholder="Create a new todo..." />
+
+		{#if form?.success === false}
+			<p class="error">Error: {form?.message}</p>
+		{/if}
 	</form>
 
-	<ul class="todos">
+<!--
+	<pre>{JSON.stringify(data.user, null, 2)}</pre>
+	<pre>{JSON.stringify(data.todos, null, 2)}</pre>
+-->
+
+	<div class="todos">
 		{#each data.todos as todo (todo.id)}
-			<li in:fly={{ y: -120, duration: 120 }} out:fade={{duration: 200}}>
-				<form method="POST" action="?/delete">
-					<label>
-						<input type="hidden" name="id" value={todo.id} />
-						<input type="checkbox" checked={todo.done} />
-						<span>{todo.description}</span>
-						<button aria-label="Mark as complete">
-							<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
-								<path
-									fill="#888"
-									stroke="none"
-									d="M22 4.2h-5.6L15 1.6c-.1-.2-.4-.4-.7-.4H9.6c-.2 0-.5.2-.6.4L7.6 4.2H2c-.4 0-.8.4-.8.8s.4.8.8.8h1.8V22c0 .4.3.8.8.8h15c.4 0 .8-.3.8-.8V5.8H22c.4 0 .8-.3.8-.8s-.4-.8-.8-.8zM10.8 16.5c0 .4-.3.8-.8.8s-.8-.3-.8-.8V10c0-.4.3-.8.8-.8s.8.3.8.8v6.5zm4 0c0 .4-.3.8-.8.8s-.8-.3-.8-.8V10c0-.4.3-.8.8-.8s.8.3.8.8v6.5z"
-								/>
-							</svg>
-						</button>
-					</label>
+			<div class="todoItem" in:fly={{ y: -120, duration: 120 }} out:fade={{ duration: 200 }}>
+				<div class="todoControls">
+					<input type="checkbox" name="done" bind:value={todo.done} />
+				</div>
+				<div
+					class="todoContent"
+					style={todo.done ? 'text-decoration:line-through' : 'text-decoration: none'}
+				>
+					<!-- <h4 style="margin-bottom: 0">{todo.title}</h4> -->
+					<span style="margin-bottom: 0">{todo.content}</span>
+				</div>
+				<form method="POST" action="?/deleteTodo" class="todoControls" use:enhance>
+					<input type="hidden" value={todo.id} name="id" />
+					<button class="green">
+						<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24">
+							<path
+								fill="currentColor"
+								stroke="none"
+								d="M22 4.2h-5.6L15 1.6c-.1-.2-.4-.4-.7-.4H9.6c-.2 0-.5.2-.6.4L7.6 4.2H2c-.4 0-.8.4-.8.8s.4.8.8.8h1.8V22c0 .4.3.8.8.8h15c.4 0 .8-.3.8-.8V5.8H22c.4 0 .8-.3.8-.8s-.4-.8-.8-.8zM10.8 16.5c0 .4-.3.8-.8.8s-.8-.3-.8-.8V10c0-.4.3-.8.8-.8s.8.3.8.8v6.5zm4 0c0 .4-.3.8-.8.8s-.8-.3-.8-.8V10c0-.4.3-.8.8-.8s.8.3.8.8v6.5z"
+							/>
+						</svg>
+					</button>
 				</form>
-			</li>
+			</div>
 		{/each}
-	</ul>
-</main>
+	</div>
+</div>
 
 <style>
-	:global(html) {
-		background-color: #0c0c0c;
-		color: #efefef;
-	}
-
-	.centered {
-		max-width: 23em;
-		margin: 0 auto;
-	}
-
-	h1 {
+	label {
+		font-size: 32px;
 		text-align: center;
-		font-size: 3em;
-    margin-bottom: 0.3em;
+	}
+	div {
+		margin-bottom: 15px;
+	}
+	.todos > * {
+		padding: calc(var(--spacing) / 2) 0;
+		border-radius: var(--border-radius);
+		background: var(--code-background-color);
+		text-align: center;
 	}
 
-	input[type='text'] {
+	.todoItem {
+		display: flex;
+	}
+	.todoContent {
+    margin: auto;
 		width: 100%;
-		margin-bottom: 2em;
-		line-height: 2.2em;
-		background-color: #222;
-		border: 1px solid #444;
-		border-radius: 0.5em;
-		color: #efefef;
 	}
-	input[type='text']:focus {
-		outline: 2px solid #666;
+	.todoControls {
+    margin: auto;
+		display: flex;
+		margin-left: 10px;
+		margin-right: 10px;
 	}
 
-	ul {
+	.todoControls > button {
+    margin: auto;
+		background-color: inherit;
 		padding: 0;
-	}
-
-	li {
-		list-style: none;
-		margin-bottom: 1em;
-    border: 1px solid #111;
-    border-radius: 10px;
-    padding: 5px 5px;
-    line-height: 1.6em;
-	}
-
-  label {
-    display: flex;
-  }
-
-  span {
-		width: 100%;
-		margin-left: 1em;
-		font-size: 1.1em;
-	}
-
-	button {
-    margin-left: 0.2em;
-		background-color: transparent;
 		border: none;
 		cursor: pointer;
-		width: 36px;
 		opacity: 0.5;
 		transition: opacity 0.2s;
+		justify-items: center;
 	}
 
-	button:hover {
+	.todoControls > button:hover {
 		opacity: 1;
+	}
+
+	.line-through {
+		text-decoration: line-through;
+	}
+
+	.error {
+		color: var(--del-color);
+		font-weight: bold;
 	}
 </style>
