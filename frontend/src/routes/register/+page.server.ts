@@ -1,3 +1,4 @@
+import { API_URL } from '$env/static/private';
 import { fail, redirect } from '@sveltejs/kit';
 
 export const actions: Actions = {
@@ -16,7 +17,7 @@ export const actions: Actions = {
 		}
 
 		try {
-			const res = await fetch(`http://localhost:1234/api/register`, {
+			const res = await fetch(`${API_URL}/api/register`, {
 				method: 'POST',
 				body: JSON.stringify({ email, password })
 			});

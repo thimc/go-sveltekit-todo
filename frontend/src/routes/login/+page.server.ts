@@ -1,3 +1,4 @@
+import { API_URL } from '$env/static/private';
 import { fail, redirect } from '@sveltejs/kit';
 import type { Actions, PageServerLoad } from './$types';
 
@@ -16,7 +17,7 @@ export const actions: Actions = {
 		const password = formData.get('password');
 
 		try {
-			const res = await fetch(`http://localhost:1234/api/login`, {
+			const res = await fetch(`${API_URL}/api/login`, {
 				method: 'POST',
 				body: JSON.stringify({ email, password })
 			});

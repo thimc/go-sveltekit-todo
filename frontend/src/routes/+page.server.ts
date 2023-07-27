@@ -1,3 +1,4 @@
+import { API_URL } from '$env/static/private';
 import type { Actions, PageServerLoad } from './$types';
 
 export const load: PageServerLoad = async ({ locals }) => {
@@ -6,7 +7,7 @@ export const load: PageServerLoad = async ({ locals }) => {
 	const getTodos = async () => {
 		console.log('Fetching todos');
 		const token = user?.token ?? '';
-		const res = await fetch(`http://localhost:1234/api/v1/todos`, {
+		const res = await fetch(`${API_URL}/api/v1/todos`, {
 			method: 'GET',
 			headers: { Authorization: `Bearer ${token}` }
 		});
@@ -28,7 +29,7 @@ export const actions: Actions = {
 		const user = locals.user;
 
 		try {
-			const res = await fetch(`http://localhost:1234/api/v1/todos`, {
+			const res = await fetch(`${API_URL}/api/v1/todos`, {
 				method: 'POST',
 				headers: {
 					Authorization: `Bearer ${user?.token}`

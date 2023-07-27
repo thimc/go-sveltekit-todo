@@ -1,10 +1,11 @@
+import { API_URL } from '$env/static/private';
 import type { RequestEvent } from '@sveltejs/kit';
 
 export const authenticateUser = async (event: RequestEvent): Promise<User | null> => {
 	const token = event.cookies.get('jwt');
 	if (token === undefined) return null;
 
-	const res = await fetch(`http://localhost:1234/api/check`, {
+	const res = await fetch(`${API_URL}/api/check`, {
 		method: 'GET',
 		headers: { Authorization: `Bearer ${token}` }
 	});
