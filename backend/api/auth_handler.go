@@ -94,3 +94,20 @@ func (h *AuthHandler) HandleLogin(w http.ResponseWriter, r *http.Request) *types
 		ExpiresAt: claims["expiresAt"].(int64),
 	})
 }
+
+// @Summary		Verify token.
+// @Description	verifies if the JWT token is valid and returns the user info.
+// @Tags		auth
+// @Accept		json
+// @Param		Authorization	header	string	true	"JWT Token, needs to start with Bearer"
+// @Produce		json
+// @Success		200	{object}	types.User
+// @Failure		400	{object}	types.APIError
+// @Router		/api/check [get]
+func (h *AuthHandler) HandleVerifyToken(w http.ResponseWriter, r *http.Request) *types.APIError {
+	user, ok := r.Context().Value("user").(*types.User)
+	if !ok {
+		return types.NewAPIError(false, fmt.Errorf("Invalid token"), http.StatusBadRequest)
+	}
+	return utils.ResponseWriteJSON(w, user)
+}

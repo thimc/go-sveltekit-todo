@@ -47,7 +47,6 @@ func (h *UserHandler) HandleGetUsers(w http.ResponseWriter, r *http.Request) *ty
 // @Tags		users
 // @Accept		json
 // @Param		Authorization	header	string	true	"JWT Token, needs to start with Bearer"
-// @Param		id	path	int	true	"Todo ID"
 // @Produce		json
 // @Success		200	{object}	types.User
 // @Failure		400	{object}	types.APIError

@@ -17,6 +17,7 @@ import (
 type JWTMiddleware struct {
 	store store.UserStorer
 }
+
 func NewJWTMiddleware(store store.UserStorer) *JWTMiddleware {
 	return &JWTMiddleware{
 		store: store,
@@ -54,6 +55,7 @@ func (m *JWTMiddleware) Middleware(next http.Handler) http.Handler {
 			utils.WriteJSON(w, types.NewAPIError(false, fmt.Errorf("Access denied"), http.StatusUnauthorized))
 			return
 		}
+		user.EncryptedPassword = ""
 
 		ctx := context.WithValue(r.Context(), "user", user)
 		next.ServeHTTP(w, r.WithContext(ctx))

@@ -75,6 +75,10 @@ func main() {
 	route.HandleFunc("/register", utils.HandleAPIFunc(authHandler.HandleRegister)).Methods(http.MethodPost)
 	route.HandleFunc("/login", utils.HandleAPIFunc(authHandler.HandleLogin)).Methods(http.MethodPost)
 
+	proute := route.PathPrefix("/").Subrouter()
+	proute.Use(jwt.Middleware)
+	proute.HandleFunc("/check", utils.HandleAPIFunc(authHandler.HandleVerifyToken)).Methods(http.MethodGet)
+
 	// todo
 	v1.HandleFunc("/todos", utils.HandleAPIFunc(todoHandler.HandleGetTodos)).Methods(http.MethodGet)
 	v1.HandleFunc("/todos", utils.HandleAPIFunc(todoHandler.HandleInsertTodo)).Methods(http.MethodPost)

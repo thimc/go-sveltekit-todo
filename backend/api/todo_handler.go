@@ -2,6 +2,7 @@ package api
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"strconv"
 
@@ -102,7 +103,7 @@ func (h *TodoHandler) HandleInsertTodo(w http.ResponseWriter, r *http.Request) *
 // @Param		id	path	int	true	"Todo ID"
 // @Param		todo	body	types.UpdateTodoParams	true	"New todo data"
 // @Produce		json
-// @Success		200	{object}	nil
+// @Success		200	{object}	types.APIError
 // @Failure		400	{object}	types.APIError
 // @Security	ApiKeyAuth
 // @Router		/api/v1/todos/{id} [put]
@@ -120,7 +121,7 @@ func (h *TodoHandler) HandlePutTodo(w http.ResponseWriter, r *http.Request) *typ
 		return types.NewAPIError(false, err, http.StatusBadRequest)
 	}
 
-	return nil
+	return utils.ResponseWriteJSON(w, types.NewAPIError(true, fmt.Errorf("todo ID: %d", id), http.StatusOK))
 }
 
 // @Summary		Delete a todo.
@@ -130,7 +131,7 @@ func (h *TodoHandler) HandlePutTodo(w http.ResponseWriter, r *http.Request) *typ
 // @Param		Authorization	header	string	true	"JWT Token, needs to start with Bearer"
 // @Param		id	path	int	true	"Todo ID"
 // @Produce		json
-// @Success		200	{object}	nil
+// @Success		200	{object}	types.APIError
 // @Failure		400	{object}	types.APIError
 // @Failure		404	{object}	types.APIError
 // @Router		/api/v1/todos/{id} [delete]
@@ -145,7 +146,7 @@ func (h *TodoHandler) HandleDeleteTodoByID(w http.ResponseWriter, r *http.Reques
 		return types.NewAPIError(false, err, http.StatusNotFound)
 	}
 
-	return nil
+	return utils.ResponseWriteJSON(w, types.NewAPIError(true, fmt.Errorf("todo ID: %d", id), http.StatusOK))
 }
 
 // @Summary		Patch a todo.
@@ -156,7 +157,7 @@ func (h *TodoHandler) HandleDeleteTodoByID(w http.ResponseWriter, r *http.Reques
 // @Param		id	path	int	true	"Todo ID"
 // @Param		todo	body	types.UpdateTodoParams	false	"New todo data"
 // @Produce		json
-// @Success		200	{object}	nil
+// @Success		200	{object}	types.APIError
 // @Failure		400	{object}	types.APIError
 // @Failure		404	{object}	types.APIError
 // Security		ApiKeyAuth
@@ -176,5 +177,5 @@ func (h *TodoHandler) HandlePatchTodoByID(w http.ResponseWriter, r *http.Request
 		return types.NewAPIError(false, err, http.StatusNotFound)
 	}
 
-	return nil
+	return utils.ResponseWriteJSON(w, types.NewAPIError(true, fmt.Errorf("todo ID: %d", id), http.StatusOK))
 }
