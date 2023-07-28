@@ -1,8 +1,7 @@
 import { API_URL } from '$env/static/private';
 import type { RequestEvent } from '@sveltejs/kit';
-import type { User } from '../../app';
 
-export const authenticateUser = async (event: RequestEvent): Promise<User | null> => {
+export const authenticateUser = async (event: RequestEvent): Promise<App.User | null> => {
 	const token = event.cookies.get('jwt');
 	if (token === undefined) return null;
 
@@ -19,7 +18,7 @@ export const authenticateUser = async (event: RequestEvent): Promise<User | null
 			return null;
 		}
 
-		const user: User = {
+		const user: App.User = {
 			id: result.id,
 			email: result.email,
 			token: token

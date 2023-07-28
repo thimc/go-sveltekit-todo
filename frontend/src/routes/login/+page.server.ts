@@ -1,4 +1,4 @@
-import { API_URL } from '$env/static/private';
+import { API_URL, JWT_COOKIE } from '$env/static/private';
 import { fail, redirect } from '@sveltejs/kit';
 import type { Actions, PageServerLoad } from './$types';
 
@@ -6,7 +6,7 @@ export const load: PageServerLoad = async ({ url, cookies }) => {
   const email = url.searchParams.get('registeredEmail');
 	return {
     registeredEmail: email,
-		cookie: cookies.get('jwt')
+		cookie: cookies.get(JWT_COOKIE)
 	};
 };
 
@@ -33,7 +33,7 @@ export const actions: Actions = {
 			console.log('Login success result:', result);
 			const now = Math.floor(Number(new Date()) / 1000);
 			console.log('Expire:', result.expiresAt - now);
-			cookies.set('jwt', result.token, {
+			cookies.set(JWT_COOKIE, result.token, {
 				path: '/',
 				sameSite: 'strict',
 				httpOnly: true,

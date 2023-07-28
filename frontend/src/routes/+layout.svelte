@@ -21,12 +21,7 @@
 		<ul>
 			{#if loggedIn}
 				<li>
-        <!--
-					<form action="/logout" method="POST">
-						<button>Logout</button>
-					</form>
-          -->
-          <a href="/logout" data-sveltekit-preload-data="off" role="button">Logout</a>
+					<a href="/logout" data-sveltekit-preload-data="off" role="button">Logout</a>
 				</li>
 			{:else}
 				<li>

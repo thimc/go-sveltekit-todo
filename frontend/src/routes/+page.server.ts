@@ -79,6 +79,31 @@ export const actions: Actions = {
 			console.log('Error removing todo:', err);
 		}
 
-		console.log('Remove todo: ', todoId);
+		console.log('Remove todo:', todoId);
+	},
+	editTodo: async ({ locals, request }) => {
+		const formData = await request.formData();
+		const todoId = formData.get('id');
+		const todoContent = formData.get('content');
+
+		const token = locals.user?.token;
+		try {
+			const res = await fetch(`http://localhost:1234/api/v1/todos/${todoId}`, {
+				method: 'PATCH',
+				headers: {
+					Authorization: `Bearer ${token}`
+				},
+        body: JSON.stringify({
+          id: todoId,
+          content: todoContent,
+        }),
+			});
+			const result = await res.json();
+			console.log('Result:', result);
+		} catch (err) {
+			console.log('Error removing todo:', err);
+		}
+
+		console.log('Edit todo:', todoId, todoContent);
 	}
 };
