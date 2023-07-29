@@ -1,21 +1,20 @@
 import { API_URL } from '$env/static/private';
-import type { Actions, PageServerLoad } from './$types';
 
-export const load: PageServerLoad = async ({ locals }) => {
+export const load = async ({ locals }) => {
 	const { user } = locals;
 
-	const getTodos = async () => {
+	const getTodos = async (): Promise<App.Todo[] | null> => {
 		console.log('Fetching todos');
 		const token = user?.token ?? '';
 		try {
 			const res = await fetch(`${API_URL}/api/v1/todos`, {
 				method: 'GET',
 				headers: { Authorization: `Bearer ${token}` }
-			});
-			const result = await res.json();
+			})
+				.then((response) => response.json())
+				.then((data) => data.result as App.Todo[]);
 
-			const todos = result.result;
-			return todos;
+			return res;
 		} catch (err) {
 			console.log('getTodos error:', err);
 		}
@@ -28,7 +27,7 @@ export const load: PageServerLoad = async ({ locals }) => {
 	};
 };
 
-export const actions: Actions = {
+export const actions = {
 	createTodo: async ({ locals, request }) => {
 		const formData = await request.formData();
 		const content = formData.get('content');
@@ -93,10 +92,10 @@ export const actions: Actions = {
 				headers: {
 					Authorization: `Bearer ${token}`
 				},
-        body: JSON.stringify({
-          id: todoId,
-          content: todoContent,
-        }),
+				body: JSON.stringify({
+					id: todoId,
+					content: todoContent
+				})
 			});
 			const result = await res.json();
 			console.log('Result:', result);

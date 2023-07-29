@@ -1,8 +1,7 @@
 import { API_URL, JWT_COOKIE } from '$env/static/private';
 import { fail, redirect } from '@sveltejs/kit';
-import type { Actions, PageServerLoad } from './$types';
 
-export const load: PageServerLoad = async ({ url, cookies }) => {
+export const load = async ({ url, cookies }) => {
   const email = url.searchParams.get('registeredEmail');
 	return {
     registeredEmail: email,
@@ -10,7 +9,7 @@ export const load: PageServerLoad = async ({ url, cookies }) => {
 	};
 };
 
-export const actions: Actions = {
+export const actions = {
 	default: async ({ request, cookies }) => {
 		const formData = await request.formData();
 		const email = formData.get('email');

@@ -1,68 +1,45 @@
 <script>
+	import Modal from './Modal.svelte';
 	import { enhance } from '$app/forms';
 	import { fly, fade } from 'svelte/transition';
 
-	let showModal = false;
-	let modalTextChanged = false;
+	let creatingTodo = false;
+  let showModal =false;
+
 	export let data;
 	export let form;
 </script>
 
 <div>
-	<form method="POST" action="?/createTodo" use:enhance>
-		<!--		<label for="todo">my todos</label>-->
-		<input type="text" name="content" placeholder="Create a new todo..." />
+	<form
+		method="POST"
+		action="?/createTodo"
+		use:enhance={() => {
+			creatingTodo = true;
+			return async ({ update }) => {
+				await update();
+				creatingTodo = false;
+			};
+		}}
+	>
+		<input aria-busy={creatingTodo} type="text" name="content" placeholder="Create a new todo..." />
+		{#if creatingTodo}
+			<small><small class="spinner" />Posting your todo to the database..</small>
+		{/if}
 
-		{#if form?.success === false}
+		{#if form?.success === false && !creatingTodo}
 			<p class="error">Error: {form?.message}</p>
 		{/if}
 	</form>
 
+	<!--
 	<pre>{JSON.stringify(data.user, null, 2)}</pre>
 	<pre>{JSON.stringify(data.todos, null, 2)}</pre>
+  -->
 
 	<div class="todos">
 		{#each data.todos as todo (todo.id)}
-			<dialog id="modal-example" open={showModal}>
-				<article>
-					<a
-						href="/"
-						on:click={() => {
-							showModal = false;
-						}}
-						aria-label="Close"
-						class="close"
-						data-target="modal-example"
-					/>
-					<h3>Edit todo</h3>
-					<small>Lorem ipsum dolor sit amet.</small>
-					<form method="POST" action="?/editTodo" class="modalform">
-						<textarea
-							name="content"
-							placeholder="Todo content"
-							on:change={() => {
-								modalTextChanged = true;
-							}}
-							cols="80"
-							rows="10">{todo.content}</textarea
-						>
-						<footer class="modalcontrols">
-							<button
-								type="button"
-								class="secondary"
-								data-target="modal-example"
-								on:click={() => {
-									showModal = false;
-								}}>Cancel</button
-							>
-							<input type="hidden" name="id" value={todo.id} />
-							<button disabled={!modalTextChanged} type="submit" data-target="modal-example"
-								>Confirm</button
-							>
-						</footer>
-					</form>
-				</article>
-			</dialog>
+			<Modal {todo} {showModal} />
 
 			<div in:fly={{ y: -120, duration: 120 }} out:fade={{ duration: 200 }} class="todo">
 				<input type="checkbox" value={todo.done} name="done" />
@@ -143,16 +120,20 @@
 		font-weight: bold;
 		text-align: center;
 	}
-	.modalform {
-		display: flex;
-		flex-direction: column;
-		gap: 10%;
-		margin: 0;
-		padding: 0;
-	}
-	.modalcontrols {
-		display: flex;
-		flex-direction: row;
-		gap: 1rem;
+	.spinner {
+		display: inline-block;
+		width: 1em;
+		height: 1em;
+		border: 0.1875em solid currentColor;
+		border-right-color: currentcolor;
+		border-radius: 1em;
+		border-right-color: transparent;
+		content: '';
+		vertical-align: text-bottom;
+		vertical-align: -0.125em;
+		animation: spinner 0.75s linear infinite;
+		opacity: var(--loading-spinner-opacity);
+		margin-left: 1em;
+		margin-right: 1em;
 	}
 </style>
